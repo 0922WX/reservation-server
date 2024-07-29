@@ -1,0 +1,112 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+model Manager {
+  id      String        @id @unique @default(uuid())
+  userName String       @unique @map("user_name") //设置字段名
+  password String
+  nickName String?      @map("nick_name")
+  avatar    String?
+  createdAt DateTime    @default(now()) @map("created_at")
+  updateAt DateTime     @updatedAt @map("updated_at")
+
+  @@map("managers") //为表设置名字
+}
+
+
+//ArticleCategory 文字分类，用于存储展示类型数据的分类，如轮播图，场馆信息
+//Article 文字详情
+//Reservation 预约信息，场馆的预约信息，日期，人数
+//ReservationLog预约记录，记录预约人的信息
+//User 用户信息
+
+//文章分类
+model ArticleCategory {
+  id        String        @id @unique @default(uuid())
+  name      String
+  desc      String?
+  content   String?       @db.Text //没有长度限制
+  img       String?
+  createdAt DateTime      @default(now()) @map("created_at")
+  updateAt  DateTime      @updatedAt @map("updated_at")
+  Article   Article[]
+
+  @@map("article_categories")
+}
+
+
+//文字信息
+model Article {
+  id                  String          @id @unique @default(uuid())
+  title               String
+  desc                String?
+  content             String?         @db.Text 
+  coverImage          String?        @map("cover_image")
+  views               Int             @default(0)//浏览次数
+  link                String?//跳转链接
+  articleCategory     ArticleCategory? @relation(fields: [articleCategoryId], references: [id]) //表关联
+  createdAt           DateTime        @default(now()) @map("created_at")
+  updateAt            DateTime        @updatedAt @map("updated_at")
+  articleCategoryId   String?         @map("article_category_id")
+  @@map("articles")
+}
+
+//预约信息
+model Reservation {
+  id                  String          @id @unique @default(uuid())
+  title               String
+  desc                String?
+  content             String?         @db.Text 
+  coverImage          String?         @map("cover_image")
+  views               Int             @default(0)//浏览次数
+  link                String?        //跳转链接
+  maxCount            Int             @default(10) @map("max_count")
+  startDate           DateTime        @map("start_date")
+  createdAt           DateTime        @default(now()) @map("created_at")
+  updateAt            DateTime        @updatedAt @map("updated_at")
+  ReservationLog      ReservationLog[]
+
+  @@map("reservations")
+}
+
+
+model ReservationLog {
+  id                  String          @id @unique @default(uuid())
+  name                String          @map("user_name")
+  phone               String
+  address             String
+  reservation         Reservation?     @relation(fields: [reservationId], references: [id])
+  user                User?           @relation(fields: [userId], references: [id])
+  status              Int             @default(0)//0未使用，已使用
+  startDate           DateTime        @map("start_date")//可以预约时间
+  createdAt           DateTime        @default(now()) @map("created_at")
+  updateAt            DateTime        @updatedAt @map("updated_at")
+  reservationId       String?       
+  userId              String?         @map("user_id")
+  @@map("reservation_logs")     
+}
+
+
+model User {
+  id                  String          @id @unique @default(uuid())
+  userName            String          @map("user_name")
+  password            String
+  nickName            String?         @map("nick_name")
+  avatar              String?
+  createdAt           DateTime        @default(now()) @map("created_at")
+  updateAt            DateTime        @updatedAt @map("updated_at")
+  ReservationLog      ReservationLog[]
+  @@map("users")
+}
